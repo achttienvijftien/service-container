@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Coding Standards for service-container">
+    <description>Sniffs for service-container</description>
+
+    <!-- Use colors in output. -->
+    <arg name="colors"/>
+
+    <arg value="ps"/>
+
+    <arg name="extensions" value="php"/>
+
+    <file>./service-container.php</file>
+
+    <rule ref="1815BuildingTechniques"/>
+
+    <config name="testVersion" value="8.1-"/>
+    <rule ref="PHPCompatibilityWP" />
+</ruleset>

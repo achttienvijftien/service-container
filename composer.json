@@ -1,0 +1,35 @@
+{
+  "name": "achttienvijftien/service-container",
+  "type": "wordpress-muplugin",
+  "license": "GPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "1815",
+      "email": "it@1815.nl"
+    }
+  ],
+  "require": {
+    "php": "^8.1",
+    "boxuk/wp-muplugin-loader": "^2.2",
+    "symfony/dependency-injection": "^6.4",
+    "symfony/config": "^6.4",
+    "symfony/http-kernel": "^6.4"
+  },
+  "require-dev": {
+    "achttienvijftien/building-techniques": "^1.0",
+    "dealerdirect/phpcodesniffer-composer-installer": "*",
+    "phpcompatibility/phpcompatibility-wp": "*"
+  },
+  "scripts": {
+    "format": "phpcbf --report-summary --report-source",
+    "lint": "phpcs"
+  },
+  "extra": {
+    "mu-require-file": "service-container.php"
+  },
+  "config": {
+    "allow-plugins": {
+      "boxuk/wp-muplugin-loader": true
+    }
+  }
+}
