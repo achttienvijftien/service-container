@@ -86,7 +86,7 @@ class ServiceContainer {
 	 */
 	public function __construct() {
 		$this->environment = $this->get_environment();
-		$this->debug       = \in_array( $this->environment, [ 'local', 'development' ], true );
+		$this->debug       = in_array( $this->environment, [ 'local', 'dev' ], true );
 		$this->config_path = $this->get_project_dir() . '/config';
 	}
 
@@ -116,7 +116,7 @@ class ServiceContainer {
 	 * Initializes bundles and container.
 	 *
 	 * @return ContainerInterface
-	 * @throws \Exception
+	 * @throws \Exception When bundles or container couldn't be booted, only on local environments.
 	 */
 	private function pre_boot(): ContainerInterface {
 		try {
@@ -313,11 +313,13 @@ class ServiceContainer {
 		if ( ! is_dir( $this->get_cache_dir() ) ) {
 			if ( false === wp_mkdir_p( $this->get_cache_dir() ) ) {
 				throw new \RuntimeException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 					"Unable to create the cache directory ({$this->get_cache_dir()})."
 				);
 			}
 		} elseif ( ! is_writable( $this->get_cache_dir() ) ) {
 			throw new \RuntimeException(
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				"Unable to write to the cache directory ({$this->get_cache_dir()})."
 			);
 		}
@@ -328,7 +330,7 @@ class ServiceContainer {
 		$bundles          = [];
 		$bundles_metadata = [];
 
-		foreach ( $this->bundles as $bundle ) {
+		foreach ( $this->get_bundles() as $bundle ) {
 			$bundles[ $bundle->getName() ]          = $bundle::class;
 			$bundles_metadata[ $bundle->getName() ] = [
 				'path'      => $bundle->getPath(),
@@ -352,8 +354,9 @@ class ServiceContainer {
 			]
 		);
 
-		foreach ( $this->bundles as $bundle ) {
+		foreach ( $this->get_bundles() as $bundle ) {
 			$extension = $bundle->getContainerExtension();
+
 			if ( $extension ) {
 				$builder->registerExtension( $extension );
 			}
@@ -393,7 +396,8 @@ class ServiceContainer {
 			$loader->import( 'packages/*.yaml', null, true );
 
 			$container->fileExists( "$this->config_path/bundles.php" );
-		} catch ( FileLoaderImportCircularReferenceException|LoaderLoadException $e ) {
+		} catch ( FileLoaderImportCircularReferenceException | LoaderLoadException $e ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			throw new \Exception( 'Could not configure container: ' . $e->getMessage(), null, $e );
 		}
 	}
@@ -436,6 +440,7 @@ class ServiceContainer {
 		foreach ( $this->get_registered_bundles() as $bundle ) {
 			$name = $bundle->getName();
 			if ( isset( $this->bundles[ $name ] ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				throw new \Exception( "Bundle '$name' already exists" );
 			}
 			$this->bundles[ $name ] = $bundle;
