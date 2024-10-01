@@ -47,11 +47,18 @@ class ServiceContainer {
 	private bool $debug;
 
 	/**
+	 * Whether container is booted.
+	 *
+	 * @var bool
+	 */
+	private bool $booted = false;
+
+	/**
 	 * The container.
 	 *
-	 * @var ContainerInterface
+	 * @var ContainerInterface|null
 	 */
-	private ContainerInterface $container;
+	private ?ContainerInterface $container = null;
 
 	/**
 	 * Bundles.
@@ -75,12 +82,22 @@ class ServiceContainer {
 	private ?string $project_dir = null;
 
 	/**
-	 * SerivceContainer constructor.
+	 * ServiceContainer constructor.
 	 */
 	public function __construct() {
 		$this->environment = $this->get_environment();
 		$this->debug       = \in_array( $this->environment, [ 'local', 'development' ], true );
 		$this->config_path = $this->get_project_dir() . '/config';
+	}
+
+	/**
+	 * Clone magic method.
+	 *
+	 * @return void
+	 */
+	public function __clone() {
+		$this->booted    = false;
+		$this->container = null;
 	}
 
 	/**
@@ -96,24 +113,45 @@ class ServiceContainer {
 	}
 
 	/**
-	 * Boots the service container.
+	 * Initializes bundles and container.
 	 *
-	 * @return void
-	 * @throws \Exception On container boot error if env type is development.
+	 * @return ContainerInterface
+	 * @throws \Exception
 	 */
-	public function boot(): void {
+	private function pre_boot(): ContainerInterface {
 		try {
 			$this->initialize_bundles();
 			$this->initialize_container();
 
 			add_filter( 'achttienvijftien/container', [ $this, 'get' ] );
 			do_action( 'achttienvijftien/container_booted', $this->get() );
+
+			return $this->container;
 		} catch ( \Exception $exception ) {
 			if ( 'local' === wp_get_environment_type() ) {
 				throw $exception;
 			}
 			wp_die( esc_html( 'Could not boot container: ' . $exception->getMessage() ) );
 		}
+	}
+
+	/**
+	 * Boots the service container.
+	 *
+	 * @return void
+	 * @throws \Exception On container boot error if env type is development.
+	 */
+	public function boot(): void {
+		if ( null === $this->container ) {
+			$container = $this->pre_boot();
+		}
+
+		foreach ( $this->get_bundles() as $bundle ) {
+			$bundle->setContainer( $container );
+			$bundle->boot();
+		}
+
+		$this->booted = true;
 	}
 
 	/**
@@ -247,11 +285,11 @@ class ServiceContainer {
 	}
 
 	/**
-	 * Returns the compailed container.
+	 * Returns the compiled container.
 	 *
-	 * @return ContainerInterface
+	 * @return ContainerInterface|null
 	 */
-	public function get(): ContainerInterface {
+	public function get(): ?ContainerInterface {
 		return $this->container;
 	}
 
@@ -355,7 +393,7 @@ class ServiceContainer {
 			$loader->import( 'packages/*.yaml', null, true );
 
 			$container->fileExists( "$this->config_path/bundles.php" );
-		} catch ( FileLoaderImportCircularReferenceException | LoaderLoadException $e ) {
+		} catch ( FileLoaderImportCircularReferenceException|LoaderLoadException $e ) {
 			throw new \Exception( 'Could not configure container: ' . $e->getMessage(), null, $e );
 		}
 	}
@@ -366,7 +404,7 @@ class ServiceContainer {
 	 *
 	 * @return array
 	 */
-	protected function get_registered_bundles(): array {
+	private function get_registered_bundles(): array {
 		$config_bundles_path = $this->get_project_dir() . '/config/bundles.php';
 
 		$bundles = [];
@@ -378,7 +416,6 @@ class ServiceContainer {
 		$bundles = apply_filters( 'achttienvijftien/container_bundles', $bundles );
 
 		$registered_bundles = [];
-
 		foreach ( $bundles as $class => $environments ) {
 			if ( $environments[ $this->environment ] ?? $environments['all'] ?? false ) {
 				$registered_bundles[] = new $class();
@@ -403,6 +440,15 @@ class ServiceContainer {
 			}
 			$this->bundles[ $name ] = $bundle;
 		}
+	}
+
+	/**
+	 * Gets initialized bundles.
+	 *
+	 * @return BundleInterface[]|null
+	 */
+	public function get_bundles(): ?array {
+		return $this->bundles;
 	}
 
 	/**
