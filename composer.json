@@ -29,5 +29,8 @@
   "config": {
     "allow-plugins": {
     }
+  },
+  "autoload": {
+    "files": ["autoload.php"]
   }
 }

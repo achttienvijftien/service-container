@@ -452,5 +452,3 @@ class ServiceContainer {
 		return $this->get_project_dir() . '/var/log';
 	}
 }
-
-add_action( 'plugins_loaded', fn() => ServiceContainer::run() );
