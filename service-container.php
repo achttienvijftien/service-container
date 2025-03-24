@@ -79,7 +79,7 @@ class ServiceContainer {
 	 */
 	public function __construct() {
 		$this->environment = wp_get_environment_type();
-		$this->debug       = in_array( $this->environment, [ 'local', 'dev' ], true );
+		$this->debug       = in_array( $this->environment, [ 'local', 'development' ], true );
 		$this->config_path = $this->get_project_dir() . '/config';
 	}
 
