@@ -47,13 +47,6 @@ class ServiceContainer {
 	private bool $debug;
 
 	/**
-	 * Whether container is booted.
-	 *
-	 * @var bool
-	 */
-	private bool $booted = false;
-
-	/**
 	 * The container.
 	 *
 	 * @var ContainerInterface|null
@@ -96,7 +89,6 @@ class ServiceContainer {
 	 * @return void
 	 */
 	public function __clone() {
-		$this->booted    = false;
 		$this->container = null;
 	}
 
@@ -138,8 +130,6 @@ class ServiceContainer {
 			$bundle->setContainer( $container );
 			$bundle->boot();
 		}
-
-		$this->booted = true;
 	}
 
 	/**
