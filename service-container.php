@@ -68,7 +68,7 @@ class ServiceContainer {
 	private array $bundles = [];
 
 	/**
-	 * Environment name, either 'local', 'development', 'staging' or 'production'.
+	 * Environment name (follows WordPress environment types); either 'local', 'development', 'staging' or 'production'.
 	 *
 	 * @var string
 	 */
@@ -85,7 +85,7 @@ class ServiceContainer {
 	 * ServiceContainer constructor.
 	 */
 	public function __construct() {
-		$this->environment = $this->get_environment();
+		$this->environment = wp_get_environment_type();
 		$this->debug       = in_array( $this->environment, [ 'local', 'dev' ], true );
 		$this->config_path = $this->get_project_dir() . '/config';
 	}
@@ -98,18 +98,6 @@ class ServiceContainer {
 	public function __clone() {
 		$this->booted    = false;
 		$this->container = null;
-	}
-
-	/**
-	 * Returns the environment, mapping the WP environment to the known Symfony envs.
-	 *
-	 * @return string
-	 */
-	private function get_environment(): string {
-		return match ( WP_ENV ) {
-			'development' => 'dev',
-			default => WP_ENV
-		};
 	}
 
 	/**
@@ -396,7 +384,7 @@ class ServiceContainer {
 			$loader->import( 'packages/*.yaml', null, true );
 
 			$container->fileExists( "$this->config_path/bundles.php" );
-		} catch ( FileLoaderImportCircularReferenceException | LoaderLoadException $e ) {
+		} catch ( FileLoaderImportCircularReferenceException|LoaderLoadException $e ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			throw new \Exception( 'Could not configure container: ' . $e->getMessage(), null, $e );
 		}
