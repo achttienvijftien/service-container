@@ -123,11 +123,11 @@ class ServiceContainer {
 	 */
 	public function boot(): void {
 		if ( null === $this->container ) {
-			$container = $this->pre_boot();
+			$this->pre_boot();
 		}
 
 		foreach ( $this->get_bundles() as $bundle ) {
-			$bundle->setContainer( $container );
+			$bundle->setContainer( $this->container );
 			$bundle->boot();
 		}
 	}
