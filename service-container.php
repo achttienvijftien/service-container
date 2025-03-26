@@ -104,7 +104,6 @@ class ServiceContainer {
 			$this->initialize_container();
 
 			add_filter( 'achttienvijftien/container', [ $this, 'get' ] );
-			do_action( 'achttienvijftien/container_booted', $this->get() );
 
 			return;
 		} catch ( \Exception $exception ) {
@@ -130,6 +129,8 @@ class ServiceContainer {
 			$bundle->setContainer( $this->container );
 			$bundle->boot();
 		}
+
+		do_action( 'achttienvijftien/container_booted', $this->get() );
 	}
 
 	/**
