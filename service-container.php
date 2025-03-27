@@ -95,18 +95,17 @@ class ServiceContainer {
 	/**
 	 * Initializes bundles and container.
 	 *
-	 * @return ContainerInterface
+	 * @return void
 	 * @throws \Exception When bundles or container couldn't be booted, only on local environments.
 	 */
-	private function pre_boot(): ContainerInterface {
+	private function pre_boot(): void {
 		try {
 			$this->initialize_bundles();
 			$this->initialize_container();
 
 			add_filter( 'achttienvijftien/container', [ $this, 'get' ] );
-			do_action( 'achttienvijftien/container_booted', $this->get() );
 
-			return $this->container;
+			return;
 		} catch ( \Exception $exception ) {
 			if ( 'local' === wp_get_environment_type() ) {
 				throw $exception;
@@ -123,13 +122,15 @@ class ServiceContainer {
 	 */
 	public function boot(): void {
 		if ( null === $this->container ) {
-			$container = $this->pre_boot();
+			$this->pre_boot();
 		}
 
 		foreach ( $this->get_bundles() as $bundle ) {
-			$bundle->setContainer( $container );
+			$bundle->setContainer( $this->container );
 			$bundle->boot();
 		}
+
+		do_action( 'achttienvijftien/container_booted', $this->get() );
 	}
 
 	/**
@@ -275,6 +276,7 @@ class ServiceContainer {
 	 * Entry point.
 	 *
 	 * @return void
+	 * @throws \Exception If container could not be booted.
 	 */
 	public static function run(): void {
 		$container = new self();
