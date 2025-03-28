@@ -7,5 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[unreleased]: https://github.com/achttienvijftien/service-container/compare/1.0.0..main
+## [1.1.0] - 2025-03-28
 
+### Changed
+
+- Make container available without automatically booting on load
+
+[unreleased]: https://github.com/achttienvijftien/service-container/compare/1.1.0..main
+
+[1.1.0]: https://github.com/achttienvijftien/service-container/compare/1.0.0..1.1.0

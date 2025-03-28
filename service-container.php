@@ -4,7 +4,7 @@
  *
  * Plugin Name: Service Container
  * Description: Provides a Symfony DI container for WordPress.
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * @package AchttienVijftien\ServiceContainer
  *
