@@ -9,17 +9,23 @@
  * @package AchttienVijftien\ServiceContainer
  *
  * @phpcs:disable WordPress.WP.AlternativeFunctions
+ * @phpcs:disable Squiz.Commenting.FunctionCommentThrowTag.WrongNumber
  */
 
 namespace AchttienVijftien\ServiceContainer;
 
 use Symfony\Component\Config\ConfigCache;
-use Symfony\Component\Config\Exception\FileLoaderImportCircularReferenceException;
-use Symfony\Component\Config\Exception\LoaderLoadException;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Loader\DelegatingLoader;
+use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\Config\Loader\LoaderResolver;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
+use Symfony\Component\DependencyInjection\Loader\ClosureLoader;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\DependencyInjection\Loader\GlobFileLoader;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
@@ -178,7 +184,7 @@ class ServiceContainer {
 
 		try {
 			$container = $this->build_container();
-			$this->configure_container( $container );
+
 			$container->compile();
 
 			$dumper  = new PhpDumper( $container );
@@ -288,6 +294,7 @@ class ServiceContainer {
 	 *
 	 * @return ContainerBuilder
 	 * @throws \RuntimeException If cache directory could not be created or written to.
+	 * @throws \Exception If something went wrong with the loader.
 	 */
 	protected function build_container(): ContainerBuilder {
 		if ( ! is_dir( $this->get_cache_dir() ) ) {
@@ -323,6 +330,10 @@ class ServiceContainer {
 				'kernel.project_dir'         => $this->get_project_dir(),
 				'kernel.environment'         => $this->environment,
 				'kernel.runtime_environment' => $this->environment,
+				'kernel.runtime_mode'        => '%env(query_string:default:container.runtime_mode:APP_RUNTIME_MODE)%',
+				'kernel.runtime_mode.web'    => '%env(bool:default::key:web:default:kernel.runtime_mode:)%',
+				'kernel.runtime_mode.cli'    => '%env(not:default:kernel.runtime_mode.web:)%',
+				'kernel.runtime_mode.worker' => '%env(bool:default::key:worker:default:kernel.runtime_mode:)%',
 				'kernel.debug'               => $this->debug,
 				'kernel.build_dir'           => $this->get_cache_dir(),
 				'kernel.cache_dir'           => $this->get_cache_dir(),
@@ -357,29 +368,67 @@ class ServiceContainer {
 			new MergeExtensionConfigurationPass( $extensions )
 		);
 
+		$this->register_container_configuration( $this->get_container_loader( $builder ) );
+
 		return $builder;
+	}
+
+	/**
+	 * Registers the container configuration.
+	 *
+	 * @param LoaderInterface $loader The loader instance responsible for configuring the container.
+	 *
+	 * @return void
+	 * @throws \Exception If something went wrong with the loader.
+	 *
+	 * @phpcs:disable Generic.Commenting.DocComment.MissingShort
+	 */
+	public function register_container_configuration( LoaderInterface $loader ): void {
+		$loader->load(
+			function ( ContainerBuilder $container ) use ( $loader ) {
+				$container->addObjectResource( $this );
+				$container->fileExists( "$this->config_path/bundles.php" );
+
+				$file = ( new \ReflectionObject( $this ) )->getFileName();
+				/** @var PhpFileLoader $kernel_loader */
+				$kernel_loader = $loader->getResolver()->resolve( $file );
+				$kernel_loader->setCurrentDir( \dirname( $file ) );
+				/** @noinspection PhpPassByRefInspection */
+				$instanceof = &\Closure::bind( fn &() => $this->instanceof, $kernel_loader, $kernel_loader )();
+
+				try {
+					$container_configurator = new ContainerConfigurator(
+						container: $container,
+						loader: $kernel_loader,
+						instanceof: $instanceof,
+						path: $file,
+						file: $file,
+						env: $this->environment
+					);
+					$this->configure_container( $container_configurator );
+				} finally {
+					$instanceof = [];
+					$kernel_loader->registerAliasesForSinglyImplementedInterfaces();
+				}
+			}
+		);
 	}
 
 	/**
 	 * Configure container.
 	 *
-	 * @param ContainerBuilder $container Container.
+	 * @param ContainerConfigurator $container Container configurator.
 	 *
 	 * @return void
-	 * @throws \Exception On configuration loader exceptions.
 	 */
-	protected function configure_container( ContainerBuilder $container ): void {
-		try {
-			$loader = new YamlFileLoader( $container, new FileLocator( $this->config_path ) );
-			$loader->import( 'services.yaml', null, 'not_found' );
-			$loader->import( "parameters/$this->environment.yaml", null, 'not_found' );
-			$loader->import( 'packages/*.yaml', null, true );
-
-			$container->fileExists( "$this->config_path/bundles.php" );
-		} catch ( FileLoaderImportCircularReferenceException|LoaderLoadException $e ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
-			throw new \Exception( 'Could not configure container: ' . $e->getMessage(), null, $e );
+	protected function configure_container( ContainerConfigurator $container ): void {
+		if ( ! is_file( "$this->config_path/services.yaml" ) ) {
+			return;
 		}
+
+		$container->import( "$this->config_path/services.yaml", null, 'not_found' );
+		$container->import( "$this->config_path/{parameters}/$this->environment.yaml", null, 'not_found' );
+		$container->import( "$this->config_path/{packages}/*.yaml", null, 'not_found' );
 	}
 
 	/**
@@ -452,5 +501,27 @@ class ServiceContainer {
 	 */
 	private function get_log_dir(): string {
 		return $this->get_project_dir() . '/var/log';
+	}
+
+	/**
+	 * Returns a loader for the container.
+	 *
+	 * @param ContainerBuilder $container The container builder.
+	 *
+	 * @return DelegatingLoader
+	 */
+	protected function get_container_loader( ContainerBuilder $container ): DelegatingLoader {
+		$env      = $this->environment;
+		$locator  = new FileLocator( $this->config_path );
+		$resolver = new LoaderResolver(
+			[
+				new YamlFileLoader( $container, $locator, $env ),
+				new PhpFileLoader( $container, $locator, $env ),
+				new GlobFileLoader( $container, $locator, $env ),
+				new ClosureLoader( $container ),
+			]
+		);
+
+		return new DelegatingLoader( $resolver );
 	}
 }
