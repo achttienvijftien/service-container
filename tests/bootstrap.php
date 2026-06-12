@@ -7,6 +7,7 @@
 
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 require_once dirname( __DIR__ ) . '/service-container.php';
+require_once __DIR__ . '/FixtureServiceContainer.php';
 
 $GLOBALS['__wp_env_type'] = 'production';
 
@@ -32,6 +33,16 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	 */
 	function apply_filters( string $hook, mixed $value ): mixed {
 		return $value;
+	}
+}
+
+if ( ! function_exists( 'do_action' ) ) {
+	/**
+	 * No-op action dispatch stub.
+	 *
+	 * @return void
+	 */
+	function do_action(): void {
 	}
 }
 

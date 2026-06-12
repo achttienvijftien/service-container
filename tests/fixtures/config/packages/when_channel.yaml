@@ -1,0 +1,10 @@
+parameters:
+  flexish: 'base'
+
+when@dev:
+  parameters:
+    flexish: 'dev-value'
+
+when@prod:
+  parameters:
+    flexish: 'prod-value'

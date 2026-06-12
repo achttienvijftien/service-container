@@ -86,7 +86,16 @@ class ServiceContainer {
 	public function __construct() {
 		$this->environment = wp_get_environment_type();
 		$this->debug       = in_array( $this->environment, [ 'local', 'development' ], true );
-		$this->config_path = $this->get_project_dir() . '/config';
+		$this->config_path = $this->get_config_path();
+	}
+
+	/**
+	 * Returns the configuration directory, overridable as a test seam.
+	 *
+	 * @return string
+	 */
+	protected function get_config_path(): string {
+		return $this->get_project_dir() . '/config';
 	}
 
 	/**
@@ -328,6 +337,13 @@ class ServiceContainer {
 		$builder->getParameterBag()->add(
 			[
 				'kernel.project_dir'         => $this->get_project_dir(),
+				// The WordPress name: bundle extensions derive their own
+				// loaders' env and ContainerConfigurator::env() from this
+				// parameter (ExtensionTrait), and existing bundles import
+				// WP-named parameter files with it. Project-level config
+				// runs on the Symfony channel instead (see
+				// get_container_loader()); code needing the channel calls
+				// self::environment_channel().
 				'kernel.environment'         => $this->environment,
 				'kernel.runtime_environment' => $this->environment,
 				'kernel.runtime_mode'        => '%env(query_string:default:container.runtime_mode:APP_RUNTIME_MODE)%',
@@ -403,7 +419,7 @@ class ServiceContainer {
 						instanceof: $instanceof,
 						path: $file,
 						file: $file,
-						env: $this->environment
+						env: self::environment_channel( $this->environment )
 					);
 					$this->configure_container( $container_configurator );
 				} finally {
@@ -434,6 +450,14 @@ class ServiceContainer {
 	/**
 	 * Symfony-style channel for a WordPress environment type, so recipes
 	 * and config written for Symfony's dev/prod vocabulary apply.
+	 *
+	 * Only dev and prod by design: the input domain is WordPress's four
+	 * hard-validated environment types (wp_get_environment_type() rejects
+	 * anything else), and staging maps to prod per Symfony convention
+	 * (prod-like wiring, debug off). Symfony's third channel, test, is
+	 * unreachable from an environment type; supporting when@test would
+	 * require test-harness detection (e.g. WP_TESTS_DOMAIN), deliberately
+	 * deferred until config we actually use needs it.
 	 *
 	 * @param string $environment The WordPress environment type.
 	 *
@@ -520,7 +544,7 @@ class ServiceContainer {
 	 *
 	 * @return string
 	 */
-	private function get_cache_dir(): string {
+	protected function get_cache_dir(): string {
 		return $this->get_project_dir() . '/var/cache';
 	}
 
@@ -541,7 +565,8 @@ class ServiceContainer {
 	 * @return DelegatingLoader
 	 */
 	protected function get_container_loader( ContainerBuilder $container ): DelegatingLoader {
-		$env      = $this->environment;
+		// Loaders match when@<env> blocks; Flex recipes write Symfony's dev/prod vocabulary, so the channel, not the WordPress name, drives config.
+		$env      = self::environment_channel( $this->environment );
 		$locator  = new FileLocator( $this->config_path );
 		$resolver = new LoaderResolver(
 			[
