@@ -10,6 +10,8 @@
     <arg name="extensions" value="php"/>
 
     <file>./service-container.php</file>
+    <file>./autoload.php</file>
+    <file>./tests</file>
 
     <rule ref="1815BuildingTechniques"/>
 

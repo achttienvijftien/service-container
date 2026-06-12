@@ -16,7 +16,8 @@
   "require-dev": {
     "achttienvijftien/building-techniques": "^1.0",
     "dealerdirect/phpcodesniffer-composer-installer": "*",
-    "phpcompatibility/phpcompatibility-wp": "*"
+    "phpcompatibility/phpcompatibility-wp": "*",
+    "phpunit/phpunit": "^9.5"
   },
   "scripts": {
     "format": "phpcbf --report-summary --report-source",

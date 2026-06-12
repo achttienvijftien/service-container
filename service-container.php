@@ -432,6 +432,36 @@ class ServiceContainer {
 	}
 
 	/**
+	 * Symfony-style channel for a WordPress environment type, so recipes
+	 * and config written for Symfony's dev/prod vocabulary apply.
+	 *
+	 * @param string $environment The WordPress environment type.
+	 *
+	 * @return string Either 'dev' or 'prod'.
+	 */
+	public static function environment_channel( string $environment ): string {
+		return in_array( $environment, [ 'local', 'development' ], true ) ? 'dev' : 'prod';
+	}
+
+	/**
+	 * Whether a bundles.php environments entry enables the bundle: the
+	 * WordPress name wins, then the Symfony channel, then 'all'.
+	 *
+	 * @param array  $environments The bundle's environments map.
+	 * @param string $environment  The WordPress environment type.
+	 *
+	 * @return bool
+	 */
+	public static function bundle_enabled( array $environments, string $environment ): bool {
+		return (bool) (
+			$environments[ $environment ]
+			?? $environments[ self::environment_channel( $environment ) ]
+			?? $environments['all']
+			?? false
+		);
+	}
+
+	/**
 	 * Returns the registered bundles, either from config/bundles.php or through the
 	 * achttienvijftien/bundles filter.
 	 *
@@ -450,7 +480,7 @@ class ServiceContainer {
 
 		$registered_bundles = [];
 		foreach ( $bundles as $class => $environments ) {
-			if ( $environments[ $this->environment ] ?? $environments['all'] ?? false ) {
+			if ( self::bundle_enabled( $environments, $this->environment ) ) {
 				$registered_bundles[] = new $class();
 			}
 		}
