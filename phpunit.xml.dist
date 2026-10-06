@@ -1,8 +1,14 @@
 <?xml version="1.0"?>
-<phpunit bootstrap="tests/bootstrap.php" colors="true">
+<phpunit bootstrap="tests/bootstrap.php" colors="true" displayDetailsOnTestsThatTriggerDeprecations="true">
 	<testsuites>
 		<testsuite name="tests">
 			<directory suffix="Test.php">./tests</directory>
 		</testsuite>
 	</testsuites>
+	<source ignoreSuppressionOfDeprecations="true">
+		<include>
+			<file>./autoload.php</file>
+			<file>./service-container.php</file>
+		</include>
+	</source>
 </phpunit>
