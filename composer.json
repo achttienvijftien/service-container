@@ -16,11 +16,14 @@
   "require-dev": {
     "achttienvijftien/building-techniques": "^1.0",
     "dealerdirect/phpcodesniffer-composer-installer": "*",
-    "phpcompatibility/phpcompatibility-wp": "*"
+    "phpcompatibility/phpcompatibility-wp": "*",
+    "symfony/yaml": "^6.4",
+    "phpunit/phpunit": "^10.5 || ^11.5 || ^12.0"
   },
   "scripts": {
     "format": "phpcbf --report-summary --report-source",
-    "lint": "phpcs"
+    "lint": "phpcs",
+    "test": "phpunit"
   },
   "config": {
     "allow-plugins": {

@@ -1,0 +1,15 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: true
+
+  _instanceof:
+    App\FooInterface:
+      tags: [ 'app.foo' ]
+
+  App\:
+    resource: '../src/App/'
+
+  App\Collector:
+    arguments: [ !tagged_iterator app.foo ]
