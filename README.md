@@ -13,3 +13,5 @@ Provides a Symfony dependency injection container for WordPress, configured like
 | 8.2+    |    –    |    –    |    –    |   ❓    |   ❓    |
 
 ✅ tested in CI · ❓ allowed by `composer.json`, not tested yet · – not supported by that Symfony version
+
+Requires WordPress 5.5 or later, the first release with `wp_get_environment_type()`. CI tests against 5.5 and the latest release.

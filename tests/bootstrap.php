@@ -8,7 +8,10 @@
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 // Loaded after the autoloader, like wp-settings.php after wp-config.php, so pre-registered hooks are converted as in WordPress.
+// WordPress before 5.9 predates PHP 8.1 return types, so its deprecations are silenced while loading; isolated tests fail on any stderr output.
+$error_level = error_reporting( error_reporting() & ~E_DEPRECATED );
 require_once dirname( __DIR__ ) . '/vendor/roots/wordpress-no-content/wp-includes/plugin.php';
+error_reporting( $error_level );
 
 /**
  * Thrown by the wp_die() stub so tests can tell it apart from other exceptions.
