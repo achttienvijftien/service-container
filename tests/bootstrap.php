@@ -5,6 +5,12 @@
  * @package AchttienVijftien\ServiceContainer\Tests
  */
 
+// The stubs live in their own file, because PHP declares a file's functions before running it and would fatal on WordPress's own.
+if ( defined( 'ABSPATH' ) || function_exists( 'add_filter' ) ) {
+	fwrite( STDERR, 'These tests load WordPress\'s hook API and stub other WordPress functions, so they must run without WordPress loaded.' . PHP_EOL );
+	exit( 1 );
+}
+
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 // Loaded after the autoloader, like wp-settings.php after wp-config.php, so pre-registered hooks are converted as in WordPress.
@@ -13,51 +19,4 @@ $error_level = error_reporting( error_reporting() & ~E_DEPRECATED );
 require_once dirname( __DIR__ ) . '/vendor/roots/wordpress-no-content/wp-includes/plugin.php';
 error_reporting( $error_level );
 
-/**
- * Thrown by the wp_die() stub so tests can tell it apart from other exceptions.
- */
-class WpDieException extends RuntimeException {
-}
-
-/**
- * Returns the environment type set by the test.
- *
- * @return string
- */
-function wp_get_environment_type(): string {
-	return $GLOBALS['wp_environment_type'] ?? 'production';
-}
-
-/**
- * Creates a directory recursively.
- *
- * @param string $target Directory path.
- *
- * @return bool
- */
-function wp_mkdir_p( string $target ): bool {
-	return is_dir( $target ) || mkdir( $target, 0777, true );
-}
-
-/**
- * Escapes HTML special characters, quotes included, like WordPress does.
- *
- * @param string $text Text.
- *
- * @return string
- */
-function esc_html( string $text ): string {
-	return htmlspecialchars( $text, ENT_QUOTES );
-}
-
-/**
- * Throws instead of dying so boot failures surface as test errors.
- *
- * @param string $message Message.
- *
- * @return never
- * @throws WpDieException Always.
- */
-function wp_die( string $message ): never {
-	throw new WpDieException( $message );
-}
+require_once __DIR__ . '/wordpress-stubs.php';
