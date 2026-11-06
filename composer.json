@@ -19,7 +19,7 @@
     "phpcompatibility/phpcompatibility-wp": "*",
     "symfony/yaml": "^6.4 || ^7.4 || ^8.0",
     "phpunit/phpunit": "^10.5 || ^11.5 || ^12.0",
-    "roots/wordpress-no-content": ">=6.0"
+    "roots/wordpress-no-content": ">=5.5"
   },
   "scripts": {
     "format": "phpcbf --report-summary --report-source",
@@ -28,7 +28,8 @@
   },
   "config": {
     "allow-plugins": {
-      "dealerdirect/phpcodesniffer-composer-installer": true
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "roots/wordpress-core-installer": false
     }
   },
   "autoload": {
