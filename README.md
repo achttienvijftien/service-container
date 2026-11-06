@@ -8,7 +8,6 @@ Provides a Symfony dependency injection container for WordPress, configured like
 |---------|:-------:|:-------:|:-------:|:-------:|:-------:|
 | 6.4     |   ✅    |   ✅    |   ✅    |   ✅    |   ✅    |
 | 7.4     |    –    |   ✅    |   ✅    |   ✅    |   ✅    |
-| 8.0     |    –    |    –    |    –    |   ✅    |   ✅    |
 | 8.1     |    –    |    –    |    –    |   ✅    |   ✅    |
 | 8.2+    |    –    |    –    |    –    |   ❓    |   ❓    |
 
