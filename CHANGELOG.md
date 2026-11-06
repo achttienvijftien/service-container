@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Require PHP 8.2 or later: the `php` constraint goes from `^8.1` to `^8.2`, because PHP 8.1 is end of life and gets no security releases, such as the fixes for CVE-2026-109618 and CVE-2026-109619
 - Test against WordPress 5.5: lower the roots/wordpress-no-content dev constraint from `>=6.0` to `>=5.5` and disable the roots/wordpress-core-installer Composer plugin
 
 ## [1.2.0] - 2025-05-22
